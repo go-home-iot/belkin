@@ -4,11 +4,20 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/fromkeith/gossdp"
+	"github.com/go-home-iot/gossdp"
+)
+
+type BinaryState int
+
+const (
+	BSOff     BinaryState = 0
+	BSOn                  = 1
+	BSUnknown             = 2
 )
 
 // Device contains information about a device that has been found on the network
@@ -189,45 +198,174 @@ func (d *Device) Load() error {
 // TurnOn turns on the device.
 func (d *Device) TurnOn() error {
 	location := parseLocation(d.Scan.Location)
-	return sendSOAP(
+	_, err := sendSOAP(
 		location,
 		"urn:Belkin:service:basicevent:1",
 		"/upnp/control/basicevent1",
 		"SetBinaryState",
 		"<BinaryState>1</BinaryState>",
 	)
+	return err
 }
 
 // TurnOff turns off the device.
 func (d *Device) TurnOff() error {
 	location := parseLocation(d.Scan.Location)
-	return sendSOAP(
+	_, err := sendSOAP(
 		location,
 		"urn:Belkin:service:basicevent:1",
 		"/upnp/control/basicevent1",
 		"SetBinaryState",
 		"<BinaryState>0</BinaryState>",
 	)
+	return err
 }
 
-func sendSOAP(location, serviceType, controlURL, action, body string) error {
+type attribute struct {
+	Name  string `xml:"name"`
+	Value int    `xml:"value"`
+}
+
+func (d *Device) FetchAttributes() (*DeviceAttributes, error) {
+	if d.Scan.SearchType != "urn:Belkin:device:Maker:1" {
+		return nil, ErrUnsupportedAction
+	}
+
+	location := parseLocation(d.Scan.Location)
+	body, err := sendSOAP(
+		location,
+		"urn:Belkin:service:deviceevent:1",
+		"/upnp/control/deviceevent1",
+		"GetAttributes",
+		"",
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Response is double encoded
+	body = html.UnescapeString(html.UnescapeString(body))
+
+	/* Response looks like:
+		<s:Envelope
+	    	xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+		    s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+			<s:Body>
+			    <u:GetAttributesResponse xmlns:u="urn:Belkin:service:deviceevent:1">
+	    		<attributeList>
+	    			<attribute>
+					    <name>Switch</name>
+						<value>1</value>
+					</attribute>
+					<attribute>
+					    <name>Sensor</name>
+	    				<value>1</value>
+					</attribute>
+					<attribute>
+		    			<name>SwitchMode</name>
+			    		<value>0</value>
+					</attribute>
+					<attribute>
+				    	<name>SensorPresent</name>
+					    <value>1</value>
+					</attribute>
+					</attributeList>
+	    		</u:GetAttributesResponse>
+			</s:Body>
+		</s:Envelope>*/
+
+	attrs := struct {
+		List []attribute `xml:"Body>GetAttributesResponse>attributeList>attribute"`
+	}{}
+
+	err = xml.Unmarshal([]byte(body), &attrs)
+	if err != nil {
+		return nil, err
+	}
+
+	var da DeviceAttributes
+	for _, attr := range attrs.List {
+		switch attr.Name {
+		case "Switch":
+			da.Switch = attr.Value
+		case "Sensor":
+			da.Sensor = attr.Value
+		case "SwitchMode":
+			da.SwitchMode = attr.Value
+		case "SensorPresent":
+			da.SensorPresent = attr.Value
+		}
+	}
+	return &da, nil
+}
+
+// FetchBinaryState fetches the latest binary state value from the device
+func (d *Device) FetchBinaryState() (BinaryState, error) {
+	// GetBinaryState always returns off for WeMo Maker, return error to callers
+	if d.Scan.SearchType == "urn:Belkin:device:Maker:1" {
+		return BSUnknown, ErrUnsupportedAction
+	}
+
+	location := parseLocation(d.Scan.Location)
+
+	/* The response looks like below:
+		<s:Envelope
+		    xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+	    	s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+			<s:Body>
+		    	<u:GetBinaryStateResponse xmlns:u="urn:Belkin:service:basicevent:1">
+			    <BinaryState>8</BinaryState>
+	    		</u:GetBinaryStateResponse>
+		    </s:Body>
+		</s:Envelope>*/
+	body, err := sendSOAP(
+		location,
+		"urn:Belkin:service:basicevent:1",
+		"/upnp/control/basicevent1",
+		"GetBinaryState",
+		"",
+	)
+	if err != nil {
+		return BSUnknown, err
+	}
+
+	resp := struct {
+		BinaryState int `xml:"Body>GetBinaryStateResponse>BinaryState"`
+	}{}
+	err = xml.Unmarshal([]byte(body), &resp)
+	if err != nil {
+		return BSUnknown, err
+	}
+
+	switch resp.BinaryState {
+	case 1, 8:
+		return BSOn, nil
+	case 0:
+		return BSOff, nil
+	default:
+		return BSUnknown, nil
+	}
+}
+
+func sendSOAP(location, serviceType, controlURL, action, body string) (string, error) {
 	url := location + controlURL
 	resp, err := postData(url, action, serviceType, body)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return fmt.Errorf("error sending command: %s", err)
+		return "", fmt.Errorf("error sending command: %s", err)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error reading response: %s", err)
+		return "", fmt.Errorf("error reading response: %s", err)
 	}
 	if resp.StatusCode != 200 {
 		fmt.Errorf("non 200 response from device: %d, %s", resp.StatusCode, string(b))
 	}
-	return nil
+	return string(b), nil
 }
 
 func postData(url, action, serviceType, body string) (*http.Response, error) {
@@ -236,6 +374,7 @@ func postData(url, action, serviceType, body string) (*http.Response, error) {
 	)
 
 	client := &http.Client{}
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader([]byte(payload)))
 	if err != nil {
 		return nil, fmt.Errorf("error making request: %s", err)

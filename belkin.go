@@ -2,11 +2,16 @@
 package belkin
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/fromkeith/gossdp"
+	"github.com/go-home-iot/gossdp"
 )
+
+// ErrUnsupportedAction is returned when you try to perform an action on a piece of hardware
+// that doesn't support it, e.g. calling FetchAttributes on a non Maker device
+var ErrUnsupportedAction = errors.New("unsupported action")
 
 // CREDIT: All the knowledge of how to control this product came from:
 // https://github.com/timonreinhard/wemo-client

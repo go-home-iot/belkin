@@ -9,6 +9,7 @@ import (
 )
 
 func TestMakerScan(t *testing.T) {
+
 	devices, err := belkin.Scan(belkin.DTMaker, 5)
 	require.Nil(t, err)
 	require.NotEqual(t, 0, len(devices), "no maker device found after scanning")
@@ -22,7 +23,14 @@ func TestMakerScan(t *testing.T) {
 		fmt.Printf("%#v\n", dev)
 	}
 
-	testDevice(t, dev)
+	err = dev.TurnOn()
+	require.Nil(t, err)
+
+	_, err = dev.FetchBinaryState()
+	require.Equal(t, err, belkin.ErrUnsupportedAction)
+
+	_, err = dev.FetchAttributes()
+	require.Nil(t, err)
 }
 
 func TestInsightScan(t *testing.T) {
@@ -39,13 +47,20 @@ func TestInsightScan(t *testing.T) {
 		fmt.Printf("%#v\n", dev)
 	}
 
-	testDevice(t, dev)
-}
-
-func testDevice(t *testing.T, d *belkin.Device) {
-	err := d.TurnOn()
+	err = dev.TurnOn()
 	require.Nil(t, err)
 
-	err = d.TurnOff()
+	val, err := dev.FetchBinaryState()
 	require.Nil(t, err)
+	require.Equal(t, val, belkin.BinaryState(belkin.BSOn))
+
+	err = dev.TurnOff()
+	require.Nil(t, err)
+
+	val, err = dev.FetchBinaryState()
+	require.Nil(t, err)
+	require.Equal(t, val, belkin.BinaryState(belkin.BSOff))
+
+	_, err = dev.FetchAttributes()
+	require.Equal(t, err, belkin.ErrUnsupportedAction)
 }
