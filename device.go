@@ -36,7 +36,7 @@ type root struct {
 	Device *Device `xml:"device"`
 }
 
-// LoadDevice fetches all of the device specific information
+// Load fetches all of the device specific information and updates the calling struct
 func (d *Device) Load() error {
 	// Example response
 	/*
@@ -186,8 +186,7 @@ func (d *Device) Load() error {
 	return nil
 }
 
-// TurnOn turns on a binary device. The location string should be the value
-// returned in the ScanResponse.Location field
+// TurnOn turns on the device.
 func (d *Device) TurnOn() error {
 	location := parseLocation(d.Scan.Location)
 	return sendSOAP(
@@ -199,8 +198,7 @@ func (d *Device) TurnOn() error {
 	)
 }
 
-// TurnOff turns off a binary device. The location string should be the value
-// returned in the ScanResponse.Location field
+// TurnOff turns off the device.
 func (d *Device) TurnOff() error {
 	location := parseLocation(d.Scan.Location)
 	return sendSOAP(
@@ -212,7 +210,6 @@ func (d *Device) TurnOff() error {
 	)
 }
 
-// SendSOAP sends a SOAP message to the device.
 func sendSOAP(location, serviceType, controlURL, action, body string) error {
 	url := location + controlURL
 	resp, err := postData(url, action, serviceType, body)

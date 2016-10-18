@@ -11,7 +11,9 @@ import (
 // CREDIT: All the knowledge of how to control this product came from:
 // https://github.com/timonreinhard/wemo-client
 
-// Scan detects Belkin devices on the network
+// Scan detects Belkin devices on the network. The devices that are returned have
+// limited information in the Scan field, to get more detailed information you will
+// have to call Load() on the device
 func Scan(dt DeviceType, waitTimeSeconds int) ([]*Device, error) {
 	var responses []ScanResponse
 	l := belkinListener{
