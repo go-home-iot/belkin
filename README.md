@@ -34,6 +34,8 @@ go test -v
 ```
 
 ##Version History
+###0.2.0
+Added support for GetBinaryState and GetAttributes calls
 ###0.1.0
 Initial release, support for scanning for belkin devices and TurnOn/TurnOff
 
