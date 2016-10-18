@@ -2,6 +2,7 @@
 A golang library to scan and control Belkin devices, such as the WeMo Maker, WeMo Insight
 
 ##Documentation
+See [godoc](https://godoc.org/github.com/go-home-iot/belkin)
 
 ##Installation
 ```bash
