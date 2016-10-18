@@ -4,6 +4,13 @@ A golang library to scan and control Belkin devices, such as the WeMo Maker, WeM
 ##Documentation
 See [godoc](https://godoc.org/github.com/go-home-iot/belkin)
 
+##Support
+This library has only been tested against:
+  - WeMo Maker
+  - WeMo Insight Switch
+  
+It may work for the other devices, but has not been tested against them.
+
 ##Installation
 ```bash
 go get github.com/go-home-iot/belkin
