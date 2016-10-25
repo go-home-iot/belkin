@@ -64,3 +64,39 @@ func TestInsightScan(t *testing.T) {
 	_, err = dev.FetchAttributes()
 	require.Equal(t, err, belkin.ErrUnsupportedAction)
 }
+
+func TestParseAttributeList(t *testing.T) {
+	s := "<attributeList> " +
+		"<attribute> " +
+		"<name>Switch</name> " +
+		"<value>10</value> " +
+		"</attribute> " +
+		"<attribute> " +
+		"<name>Sensor</name> " +
+		"<value>20</value> " +
+		"</attribute> " +
+		"<attribute> " +
+		"<name>SwitchMode</name> " +
+		"<value>30</value> " +
+		"</attribute> " +
+		"<attribute> " +
+		"<name>SensorPresent</name> " +
+		"<value>40</value> " +
+		"</attribute> " +
+		"</attributeList> "
+
+	attrs := belkin.ParseAttributeList(s)
+
+	require.NotNil(t, attrs)
+	require.Equal(t, 10, attrs.Switch)
+	require.Equal(t, 20, attrs.Sensor)
+	require.Equal(t, 30, attrs.SwitchMode)
+	require.Equal(t, 40, attrs.SensorPresent)
+}
+
+func TestParseAttributeListBadInput(t *testing.T) {
+	s := "<attributeList>THIS IS NOT VALID</attributeList>"
+
+	attrs := belkin.ParseAttributeList(s)
+	require.Nil(t, attrs)
+}

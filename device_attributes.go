@@ -1,6 +1,6 @@
 package belkin
 
-// DeviceAttributes continas values returned from the FetchAttributes call
+// DeviceAttributes contains values returned from the FetchAttributes call
 type DeviceAttributes struct {
 	// The current state of the switch, 1 -> on, 0 -> off
 	Switch int
