@@ -88,10 +88,10 @@ func TestParseAttributeList(t *testing.T) {
 	attrs := belkin.ParseAttributeList(s)
 
 	require.NotNil(t, attrs)
-	require.Equal(t, 10, attrs.Switch)
-	require.Equal(t, 20, attrs.Sensor)
-	require.Equal(t, 30, attrs.SwitchMode)
-	require.Equal(t, 40, attrs.SensorPresent)
+	require.Equal(t, 10, *attrs.Switch)
+	require.Equal(t, 20, *attrs.Sensor)
+	require.Equal(t, 30, *attrs.SwitchMode)
+	require.Equal(t, 40, *attrs.SensorPresent)
 }
 
 func TestParseAttributeListBadInput(t *testing.T) {

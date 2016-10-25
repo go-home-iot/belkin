@@ -315,15 +315,16 @@ func ParseAttributeList(body string) *DeviceAttributes {
 
 	var da DeviceAttributes
 	for _, attr := range attrs.List {
+		attr := attr
 		switch attr.Name {
 		case "Switch":
-			da.Switch = attr.Value
+			da.Switch = &attr.Value
 		case "Sensor":
-			da.Sensor = attr.Value
+			da.Sensor = &attr.Value
 		case "SwitchMode":
-			da.SwitchMode = attr.Value
+			da.SwitchMode = &attr.Value
 		case "SensorPresent":
-			da.SensorPresent = attr.Value
+			da.SensorPresent = &attr.Value
 		}
 	}
 	return &da
