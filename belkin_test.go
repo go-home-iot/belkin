@@ -52,14 +52,14 @@ func TestInsightScan(t *testing.T) {
 
 	val, err := dev.FetchBinaryState()
 	require.Nil(t, err)
-	require.Equal(t, val, belkin.BinaryState(belkin.BSOn))
+	require.Equal(t, val, 8)
 
 	err = dev.TurnOff()
 	require.Nil(t, err)
 
 	val, err = dev.FetchBinaryState()
 	require.Nil(t, err)
-	require.Equal(t, val, belkin.BinaryState(belkin.BSOff))
+	require.Equal(t, val, 0)
 
 	_, err = dev.FetchAttributes()
 	require.Equal(t, err, belkin.ErrUnsupportedAction)
