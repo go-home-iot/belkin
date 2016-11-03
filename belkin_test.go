@@ -3,6 +3,7 @@ package belkin_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-home-iot/belkin"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ func TestMakerScan(t *testing.T) {
 	require.NotEqual(t, 0, len(devices), "no maker device found after scanning")
 
 	dev := devices[0]
-	err = dev.Load()
+	err = dev.Load(time.Second * 5)
 	require.Nil(t, err)
 
 	if testing.Verbose() {
@@ -23,13 +24,13 @@ func TestMakerScan(t *testing.T) {
 		fmt.Printf("%#v\n", dev)
 	}
 
-	err = dev.TurnOn()
+	err = dev.TurnOn(time.Second * 5)
 	require.Nil(t, err)
 
-	_, err = dev.FetchBinaryState()
+	_, err = dev.FetchBinaryState(time.Second * 5)
 	require.Equal(t, err, belkin.ErrUnsupportedAction)
 
-	_, err = dev.FetchAttributes()
+	_, err = dev.FetchAttributes(time.Second * 5)
 	require.Nil(t, err)
 }
 
@@ -39,7 +40,7 @@ func TestInsightScan(t *testing.T) {
 	require.NotEqual(t, 0, len(devices), "no insight device found after scanning")
 
 	dev := devices[0]
-	err = dev.Load()
+	err = dev.Load(time.Second * 5)
 	require.Nil(t, err)
 
 	if testing.Verbose() {
@@ -47,21 +48,21 @@ func TestInsightScan(t *testing.T) {
 		fmt.Printf("%#v\n", dev)
 	}
 
-	err = dev.TurnOn()
+	err = dev.TurnOn(time.Second * 5)
 	require.Nil(t, err)
 
-	val, err := dev.FetchBinaryState()
+	val, err := dev.FetchBinaryState(time.Second * 5)
 	require.Nil(t, err)
 	require.Equal(t, val, 8)
 
-	err = dev.TurnOff()
+	err = dev.TurnOff(time.Second * 5)
 	require.Nil(t, err)
 
-	val, err = dev.FetchBinaryState()
+	val, err = dev.FetchBinaryState(time.Second * 5)
 	require.Nil(t, err)
 	require.Equal(t, val, 0)
 
-	_, err = dev.FetchAttributes()
+	_, err = dev.FetchAttributes(time.Second * 5)
 	require.Equal(t, err, belkin.ErrUnsupportedAction)
 }
 
